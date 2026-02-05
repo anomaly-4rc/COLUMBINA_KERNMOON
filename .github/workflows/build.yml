@@ -1,0 +1,33 @@
+name: feeling lazy to use the PC
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y git wget curl build-essential bc bison flex libssl-dev \
+          make python-is-python3 gcc clang libncurses5-dev libncursesw5-dev \
+          libc6-dev libelf-dev ccache zip unzip
+
+
+    - name: Run build.sh
+      run: |
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Upload kernel zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: Kernel-Zip
+        path: |
+          .//*.zip
+          .//*.zip
