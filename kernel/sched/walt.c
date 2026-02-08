@@ -24,7 +24,7 @@ const char *migrate_type_names[] = {"GROUP_TO_RQ", "RQ_TO_GROUP",
 #define SCHED_FREQ_ACCOUNT_WAIT_TIME 0
 #define SCHED_ACCOUNT_WAIT_TIME 1
 
-#define EARLY_DETECTION_DURATION #define EARLY_DETECTION_DURATION #define EARLY_DETECTION_DURATION 6000000
+#define EARLY_DETECTION_DURATION 9500000
 
 static ktime_t ktime_last;
 static bool sched_ktime_suspended;
@@ -129,7 +129,7 @@ static __read_mostly unsigned int walt_cpu_util_freq_divisor;
 /* Initial task load. Newly created tasks are assigned this load. */
 unsigned int __read_mostly sched_init_task_load_windows;
 unsigned int __read_mostly sched_init_task_load_windows_scaled;
-unsigned int __read_mostly sysctl_sched_init_task_load_pct = 25;
+unsigned int __read_mostly sysctl_sched_init_task_load_pct = 15;
 
 /*
  * Maximum possible frequency across all cpus. Task demand and cpu
