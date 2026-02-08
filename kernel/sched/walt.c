@@ -24,7 +24,7 @@ const char *migrate_type_names[] = {"GROUP_TO_RQ", "RQ_TO_GROUP",
 #define SCHED_FREQ_ACCOUNT_WAIT_TIME 0
 #define SCHED_ACCOUNT_WAIT_TIME 1
 
-#define EARLY_DETECTION_DURATION 5000000
+#define EARLY_DETECTION_DURATION #define EARLY_DETECTION_DURATION #define EARLY_DETECTION_DURATION 6000000
 
 static ktime_t ktime_last;
 static bool sched_ktime_suspended;
@@ -112,7 +112,7 @@ unsigned int sysctl_sched_ravg_window_nr_ticks = (HZ / NR_WINDOWS_PER_SEC);
 static unsigned int display_sched_ravg_window_nr_ticks =
 	(HZ / NR_WINDOWS_PER_SEC);
 
-unsigned int sysctl_sched_dynamic_ravg_window_enable = (HZ == 250);
+unsigned int sysctl_sched_dynamic_ravg_window_enable = 0;
 
 /* Window size (in ns) */
 __read_mostly unsigned int sched_ravg_window = DEFAULT_SCHED_RAVG_WINDOW;
