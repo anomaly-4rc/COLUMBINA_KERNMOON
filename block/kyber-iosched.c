@@ -67,10 +67,11 @@ static const unsigned int kyber_depth[] = {
  * Scheduling domain batch sizes. We favor reads.
  */
 static const unsigned int kyber_batch_size[] = {
-	[KYBER_READ] = 16,
-	[KYBER_SYNC_WRITE] = 8,
+	[KYBER_READ] = 32,
+	[KYBER_SYNC_WRITE] = 16,
 	[KYBER_OTHER] = 8,
 };
+
 
 /*
  * There is a same mapping between ctx & hctx and kcq & khd,
@@ -345,7 +346,7 @@ static struct kyber_queue_data *kyber_queue_data_alloc(struct request_queue *q)
 	kqd->async_depth = (1U << shift) * KYBER_ASYNC_PERCENT / 100U;
 
 	kqd->read_lat_nsec = 2000000ULL;
-	kqd->write_lat_nsec = 10000000ULL;
+	kqd->write_lat_nsec = 10000000LL;
 
 	return kqd;
 

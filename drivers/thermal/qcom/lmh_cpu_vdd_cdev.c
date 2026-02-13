@@ -15,7 +15,7 @@
 #include <linux/cpu_cooling.h>
 #include <linux/idr.h>
 
-#define LMH_CPU_VDD_MAX_LVL	1
+#define LMH_CPU_VDD_MAX_LVL	0
 #define LIMITS_CLUSTER_MIN_FREQ_OFFSET	0x3C0
 
 struct lmh_cpu_vdd_cdev {

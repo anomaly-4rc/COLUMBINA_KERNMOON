@@ -16,11 +16,12 @@
  * boost is responsible for disabling it as well.
  */
 
-unsigned int sysctl_sched_boost; /* To/from userspace */
+unsigned int sysctl_sched_boost = 1;
+ /* To/from userspace */
 unsigned int sched_boost_type; /* currently activated sched boost */
 enum sched_boost_policy boost_policy;
 
-static enum sched_boost_policy boost_policy_dt = SCHED_BOOST_NONE;
+static enum sched_boost_policy boost_policy_dt = SCHED_BOOST_ON_BIG;
 static DEFINE_MUTEX(boost_mutex);
 
 /*
