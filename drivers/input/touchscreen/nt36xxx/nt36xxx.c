@@ -25,6 +25,7 @@
 #include <linux/input/mt.h>
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
+#include <linux/cpumask.h>
 
 #if defined(CONFIG_DRM_PANEL)
 #include <drm/drm_panel.h>
@@ -1370,22 +1371,32 @@ static int32_t nvt_ts_late_probe(struct i2c_client *client,
 		NVT_ERR("register input device (%s) failed. ret=%d\n", ts->input_dev->name, ret);
 		goto err_input_register_device_failed;
 	}
+//---set int-pin & request irq---
+client->irq = gpio_to_irq(ts->irq_gpio);
+if (client->irq) {
+    NVT_LOG("int_trigger_type=%d\n", ts->int_trigger_type);
+    ts->irq_enabled = true;
+    
+    ret = request_threaded_irq(client->irq, NULL, nvt_ts_work_func,
+            ts->int_trigger_type | IRQF_ONESHOT, NVT_I2C_NAME, ts);
+            
+    if (ret != 0) {
+        NVT_ERR("request irq failed. ret=%d\n", ret);
+        goto err_int_request_failed;
+    } else {
+        static struct cpumask nvt_cpu_mask;
+        
+        cpumask_clear(&nvt_cpu_mask);
+        cpumask_set_cpu(4, &nvt_cpu_mask);
+        
+        irq_set_affinity(client->irq, &nvt_cpu_mask);
+        
+        irq_set_affinity_hint(client->irq, NULL); 
 
-	//---set int-pin & request irq---
-	client->irq = gpio_to_irq(ts->irq_gpio);
-	if (client->irq) {
-		NVT_LOG("int_trigger_type=%d\n", ts->int_trigger_type);
-		ts->irq_enabled = true;
-		ret = request_threaded_irq(client->irq, NULL, nvt_ts_work_func,
-				ts->int_trigger_type | IRQF_ONESHOT, NVT_I2C_NAME, ts);
-		if (ret != 0) {
-			NVT_ERR("request irq failed. ret=%d\n", ret);
-			goto err_int_request_failed;
-		} else {
-			nvt_irq_enable(false);
-			NVT_LOG("request irq %d succeed\n", client->irq);
-		}
-	}
+        pr_info("NVT-ts: Hard-forced IRQ %d affinity to CPU4\n", client->irq);
+        NVT_LOG("request irq %d succeed\n", client->irq);
+    }
+}
 
 #if WAKEUP_GESTURE
 	device_init_wakeup(&ts->input_dev->dev, 1);
@@ -1799,46 +1810,37 @@ static int32_t nvt_ts_suspend(struct device *dev)
  *******************************************************/
 static int32_t nvt_ts_resume(struct device *dev)
 {
-	NVT_LOG("start\n");
+    NVT_LOG("start\n");
 
-	if (bTouchIsAwake || ts->fw_ver == 0) {
-		nvt_ts_late_probe(ts->client, ts->id);
-		NVT_LOG("nvt_ts_late_probe\n");
-		return 0;
-	}
+    if (bTouchIsAwake || ts->fw_ver == 0) {
+        nvt_ts_late_probe(ts->client, ts->id);
+        
+        irq_set_affinity(ts->client->irq, cpumask_of(4));
+        
+        NVT_LOG("nvt_ts_late_probe\n");
+        return 0;
+    }
 
-	mutex_lock(&ts->lock);
-
-	// make sure display reset(RESX) sequence and dsi cmds sent before this
-#if NVT_TOUCH_SUPPORT_HW_RST
-	gpio_set_value(ts->reset_gpio, 1);
-#endif
-
-	// NT36772 IC due to no boot-load when RESX/TP_RESX
-	// nvt_bootloader_reset();
-	if (nvt_check_fw_reset_state(RESET_STATE_REK)) {
-		NVT_ERR("FW is not ready! Try to bootloader reset...\n");
-		nvt_bootloader_reset();
-		nvt_check_fw_reset_state(RESET_STATE_REK);
-	}
+    mutex_lock(&ts->lock);
 
 #if !WAKEUP_GESTURE
-	nvt_irq_enable(true);
+    nvt_irq_enable(true);
 #endif
 
+    irq_set_affinity(ts->client->irq, cpumask_of(4));
+    pr_info("NVT-ts: Resume-fix forced IRQ %d to CPU4\n", ts->client->irq);
+    // ----------------------------
+
 #if NVT_TOUCH_ESD_PROTECT
-	nvt_esd_check_enable(false);
-	queue_delayed_work(nvt_esd_check_wq, &nvt_esd_check_work,
-			msecs_to_jiffies(NVT_TOUCH_ESD_CHECK_PERIOD));
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
+#endif
 
-	bTouchIsAwake = 1;
+    bTouchIsAwake = 1;
 
-	mutex_unlock(&ts->lock);
+    mutex_unlock(&ts->lock);
 
-	NVT_LOG("end\n");
+    NVT_LOG("end\n");
 
-	return 0;
+    return 0;
 }
 
 #if defined(CONFIG_DRM_PANEL)

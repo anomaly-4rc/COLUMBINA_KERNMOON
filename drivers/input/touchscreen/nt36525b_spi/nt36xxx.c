@@ -19,6 +19,7 @@
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
+#include <linux/cpumask.h>
 #include <linux/gpio.h>
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
@@ -1447,6 +1448,7 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 	uint32_t pen_btn2 = 0;
 	uint32_t pen_battery = 0;
 
+irq_set_affinity(irq, cpumask_of(4));
 #if WAKEUP_GESTURE
 	if (bTouchIsAwake == 0) {
 		pm_wakeup_event(&ts->input_dev->dev, 5000);
@@ -2339,6 +2341,15 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 			NVT_ERR("request irq failed. ret=%d\n", ret);
 			goto err_int_request_failed;
 		} else {
+			// --- MODIFY IRQ PIN TO CPU 4 ---
+			static struct cpumask nvt_cpu_mask;
+			cpumask_clear(&nvt_cpu_mask);
+			cpumask_set_cpu(4, &nvt_cpu_mask);
+			irq_set_affinity(client->irq, &nvt_cpu_mask);
+			irq_set_affinity_hint(client->irq, NULL);
+			pr_err("NVT-DEBUG: PROBE FIX WRONG ADDRESS TO CPU 4!\n");
+			// ----------------------------------
+
 			nvt_irq_enable(false);
 			NVT_LOG("request irq %d succeed\n", client->irq);
 		}
@@ -2914,71 +2925,78 @@ return:
 *******************************************************/
 static int32_t nvt_ts_resume(struct device *dev)
 {
-	if (bTouchIsAwake) {
-		NVT_LOG("Touch is already resume\n");
-		return 0;
-	}
+    if (bTouchIsAwake) {
+        NVT_LOG("Touch is already resume\n");
+        // --- INJECTION 1 ---
+        irq_set_affinity(ts->client->irq, cpumask_of(4));
+        return 0;
+    }
 
-	mutex_lock(&ts->lock);
+    mutex_lock(&ts->lock);
 
-	NVT_LOG("start\n");
+    NVT_LOG("start\n");
 
-	// please make sure display reset(RESX) sequence and mipi dsi cmds sent before this
+    // please make sure display reset(RESX) sequence and mipi dsi cmds sent before this
 #if NVT_TOUCH_SUPPORT_HW_RST
-	gpio_set_value(ts->reset_gpio, 1);
+    gpio_set_value(ts->reset_gpio, 1);
 #endif
-	if (nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME)) {
-		NVT_ERR("download firmware failed, ignore check fw state\n");
-	} else {
-		nvt_check_fw_reset_state(RESET_STATE_REK);
-	}
+    if (nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME)) {
+        NVT_ERR("download firmware failed, ignore check fw state\n");
+    } else {
+        nvt_check_fw_reset_state(RESET_STATE_REK);
+    }
 
 #if WAKEUP_GESTURE
-	if (!ts->is_gesture_mode) {
-		nvt_irq_enable(true);
-          	NVT_LOG("NVT_IRQ_TURE\n");
-		//spi bus pm_runtime_get
-		if (spi_geni_master_dev) {
-			if (pm_runtime_get(spi_geni_master_dev)){
-				NVT_ERR("pm_runtime_get fail!\n");
-                        }
-		}
-	}
+    if (!ts->is_gesture_mode) {
+        nvt_irq_enable(true);
+        NVT_LOG("NVT_IRQ_TURE\n");
+        //spi bus pm_runtime_get
+        if (spi_geni_master_dev) {
+            if (pm_runtime_get(spi_geni_master_dev)){
+                NVT_ERR("pm_runtime_get fail!\n");
+            }
+        }
+    }
 #else
-	nvt_irq_enable(true);
+    nvt_irq_enable(true);
 #endif
+
+    // --- INJECTION 2 (THE MOST CRUCIAL POINT) ---
+    irq_set_affinity(ts->client->irq, cpumask_of(4));
+    pr_err("NVT-DEBUG: RESUME SPI PINNED TO CPU 4!\n");
+    // -----------------------------------------
 
 #if NVT_TOUCH_ESD_PROTECT
-	nvt_esd_check_enable(false);
-	queue_delayed_work(nvt_esd_check_wq, &nvt_esd_check_work,
-			msecs_to_jiffies(NVT_TOUCH_ESD_CHECK_PERIOD));
+    nvt_esd_check_enable(false);
+    queue_delayed_work(nvt_esd_check_wq, &nvt_esd_check_work,
+            msecs_to_jiffies(NVT_TOUCH_ESD_CHECK_PERIOD));
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
-	bTouchIsAwake = 1;
+    bTouchIsAwake = 1;
 
-	mutex_unlock(&ts->lock);
+    mutex_unlock(&ts->lock);
 
 #if WAKEUP_GESTURE
-	if (ts->delay_gesture) {
-		lct_nvt_tp_gesture_callback(!ts->is_gesture_mode);
-		ts->delay_gesture = false;
-	}
+    if (ts->delay_gesture) {
+        lct_nvt_tp_gesture_callback(!ts->is_gesture_mode);
+        ts->delay_gesture = false;
+    }
 #endif
 
 #if LCT_TP_WORK_EN
-	if (!get_lct_tp_work_status())
-		nvt_irq_enable(false);
+    if (!get_lct_tp_work_status())
+        nvt_irq_enable(false);
 #endif
 
 //2019.12.06 longcheer taocheng add for charger mode
 #if NVT_USB_PLUGIN
-	if (g_touchscreen_usb_pulgin.valid && g_touchscreen_usb_pulgin.usb_plugged_in)
-		g_touchscreen_usb_pulgin.event_callback();
+    if (g_touchscreen_usb_pulgin.valid && g_touchscreen_usb_pulgin.usb_plugged_in)
+        g_touchscreen_usb_pulgin.event_callback();
 #endif
 
-	NVT_LOG("end\n");
+    NVT_LOG("end\n");
 
-	return 0;
+    return 0;
 }
 
 #if WAKEUP_GESTURE
