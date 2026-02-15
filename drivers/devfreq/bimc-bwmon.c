@@ -690,7 +690,7 @@ static unsigned long set_thres(struct bw_hwmon *hw, unsigned long bytes)
 	if (likely(!m->spec->wrap_on_thres))
 		limit = bytes;
 	else
-		limit = max(bytes, 500000UL);
+		limit = max(bytes, 100000UL);
 
 	mon_set_limit(m, limit);
 	mon_enable(m, MON1);
