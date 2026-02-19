@@ -54,7 +54,7 @@ static int should_io_be_busy(void)
 			boot_cpu_data.x86_model >= 15)
 		return 1;
 #endif
-	return 0;
+	return 1;
 }
 
 /*
@@ -430,6 +430,7 @@ static int moon_init(struct dbs_data *dbs_data)
 	tuners->down_differential = 35;
 	tuners->dynamic_threshold_enable = 1;
 	tuners->columbina_mode = 0;
+	tuners->io_is_busy = 1;
 	
 	cpu = get_cpu();
 	idle_time = get_cpu_idle_time_us(cpu, NULL);
