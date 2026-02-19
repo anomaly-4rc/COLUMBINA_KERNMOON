@@ -28,8 +28,6 @@
 #include "kgsl_reclaim.h"
 #include "kgsl_sync.h"
 #include "kgsl_trace.h"
-#include <linux/interrupt.h>
-#include <linux/cpumask.h>
 
 #ifndef arch_mmap_check
 #define arch_mmap_check(addr, len, flags)	(0)
@@ -5271,7 +5269,7 @@ static int _register_device(struct kgsl_device *device)
 	return 0;
 }
 
-int kgsl_request_irq(struct platform_device *pdev, const char *name,
+int kgsl_request_irq(struct platform_device *pdev, const  char *name,
 		irq_handler_t handler, void *data)
 {
 	int ret, num = platform_get_irq_byname(pdev, name);
@@ -5282,13 +5280,9 @@ int kgsl_request_irq(struct platform_device *pdev, const char *name,
 	ret = devm_request_irq(&pdev->dev, num, handler, IRQF_TRIGGER_HIGH,
 		name, data);
 
-	if (ret) {
+	if (ret)
 		dev_err(&pdev->dev, "Unable to get interrupt %s: %d\n",
 			name, ret);
-	} else {
-		irq_set_affinity_hint(num, cpumask_of(5));
-		dev_info(&pdev->dev, "KGSL: Forced affinity for %s to CPU5\n", name);
-	}
 
 	return ret ? ret : num;
 }
