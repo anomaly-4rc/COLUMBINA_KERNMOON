@@ -427,10 +427,11 @@ static int moon_init(struct dbs_data *dbs_data)
 	if (!tuners)
 		return -ENOMEM;
 
-	tuners->down_differential = 35;
+	tuners->down_differential = 10;
 	tuners->dynamic_threshold_enable = 1;
 	tuners->columbina_mode = 0;
 	tuners->io_is_busy = 1;
+	dbs_data->sampling_rate = MICRO_FREQUENCY_MIN_SAMPLE_RATE;
 	
 	cpu = get_cpu();
 	idle_time = get_cpu_idle_time_us(cpu, NULL);
