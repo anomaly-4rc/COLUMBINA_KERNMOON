@@ -18,8 +18,16 @@
 #include <linux/slab.h>
 #include <linux/tick.h>
 #include <linux/sched/cpufreq.h>
-
+#include <linux/kobject.h>
 #include "cpufreq_columbina.h"
+#include <linux/sysctl.h>
+#include <linux/fs.h>
+#include <linux/mm.h>
+
+extern int sysctl_columbina_auto_purge;
+extern void iterate_supers(void (*f)(struct super_block *, void *), void *arg);
+extern void drop_pagecache_sb(struct super_block *sb, void *unused);
+extern void drop_slab(void);
 
 /* Columbina (base ondemand) governor macros */
 #define DEF_FREQUENCY_UP_THRESHOLD		(65)
@@ -31,7 +39,6 @@
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
 
 static struct moon_ops moon_ops;
-
 static unsigned int default_powersave_bias;
 
 /*
@@ -192,6 +199,17 @@ static unsigned int moon_dbs_update(struct cpufreq_policy *policy)
 	struct dbs_data *dbs_data = policy_dbs->dbs_data;
 	struct moon_policy_dbs_info *dbs_info = to_dbs_info(policy_dbs);
 	int sample_type = dbs_info->sample_type;
+
+    static unsigned long last_purge_time = 0;
+  if (sysctl_columbina_auto_purge == 1) {
+        if (time_after(jiffies, last_purge_time + msecs_to_jiffies(600000))) {
+            extern void drop_caches_bh(struct work_struct *work); 
+            iterate_supers(drop_pagecache_sb, NULL);
+            drop_slab();
+            last_purge_time = jiffies;
+            pr_info("Columbina_Guard: Memory swept safely.\n");
+        }
+    }
 
 	/* Common NORMAL_SAMPLE setup */
 	dbs_info->sample_type = OD_NORMAL_SAMPLE;
