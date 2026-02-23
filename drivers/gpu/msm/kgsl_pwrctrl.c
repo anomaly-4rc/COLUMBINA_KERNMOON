@@ -290,26 +290,20 @@ void kgsl_pwrctrl_buslevel_update(struct kgsl_device *device,
 	 * If the bus should remain on calculate our request and submit it,
 	 * otherwise request bus level 0, off.
 	 */
-	if (on) {
-		buslevel = min_t(int, pwr->pwrlevels[0].bus_max,
-				cur + pwr->bus_mod);
-		buslevel = max_t(int, buslevel, 1);
-	} else {
-		/* If the bus is being turned off, reset to default level */
-		pwr->bus_mod = 0;
-		pwr->bus_percent_ab = 0;
-		pwr->bus_ab_mbytes = 0;
-	}
-	trace_kgsl_buslevel(device, pwr->active_pwrlevel, buslevel);
-	last_vote_buslevel = buslevel;
+    if (on) {
+        buslevel = pwr->pwrlevels[0].bus_max;
+    } else {
+        pwr->bus_mod = 0;
+        pwr->bus_percent_ab = 0;
+        pwr->bus_ab_mbytes = 0;
+    }
 
-	/* buslevel is the IB vote, update the AB */
-	_ab_buslevel_update(pwr, &ab);
-
-	last_ab = ab;
-
-	kgsl_bus_scale_request(device, buslevel);
-
+    trace_kgsl_buslevel(device, pwr->active_pwrlevel, buslevel);
+    last_vote_buslevel = buslevel;
+    ab = (unsigned long)pwr->pwrlevels[0].bus_max * 1000;
+    last_ab = ab;
+	
+    kgsl_bus_scale_request(device, buslevel);
 	kgsl_pwrctrl_vbif_update();
 }
 EXPORT_SYMBOL(kgsl_pwrctrl_buslevel_update);
@@ -529,27 +523,15 @@ static void kgsl_pwrctrl_pwrlevel_change_settings(struct kgsl_device *device,
  * @new_level: the level to transition to
  */
 void kgsl_pwrctrl_set_thermal_cycle(struct kgsl_device *device,
-						unsigned int new_level)
+                        unsigned int new_level)
 {
-	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
+    struct kgsl_pwrctrl *pwr = &device->pwrctrl;
 
-	if ((new_level != pwr->thermal_pwrlevel) || !pwr->sysfs_pwr_limit)
-		return;
-	if (pwr->thermal_pwrlevel == pwr->sysfs_pwr_limit->level) {
-		/* Thermal cycle for sysfs pwr limit, start cycling*/
-		if (pwr->thermal_cycle == CYCLE_ENABLE) {
-			pwr->thermal_cycle = CYCLE_ACTIVE;
-			mod_timer(&pwr->thermal_timer, jiffies +
-					(TH_HZ - pwr->thermal_timeout));
-			pwr->thermal_highlow = 1;
-		}
-	} else {
-		/* Non sysfs pwr limit, stop thermal cycle if active*/
-		if (pwr->thermal_cycle == CYCLE_ACTIVE) {
-			pwr->thermal_cycle = CYCLE_ENABLE;
-			del_timer_sync(&pwr->thermal_timer);
-		}
-	}
+    pwr->thermal_cycle = CYCLE_ENABLE;
+    return;
+    if ((new_level != pwr->thermal_pwrlevel) || !pwr->sysfs_pwr_limit)
+        return;
+    // ... dst ...
 }
 
 /**
@@ -790,21 +772,19 @@ static ssize_t thermal_pwrlevel_store(struct device *dev,
 	ret = kgsl_sysfs_store(buf, &level);
 
 	if (ret)
-		return ret;
+        return ret;
+    level = 0; 
 
-	if (level > pwr->num_pwrlevels - 2)
-		level = pwr->num_pwrlevels - 2;
+    if (kgsl_pwr_limits_set_freq(pwr->sysfs_pwr_limit,
+            pwr->pwrlevels[level].gpu_freq)) {
+        dev_err(device->dev,
+                "Failed to set sysfs thermal limit via limits fw\n");
+        mutex_lock(&device->mutex);
+        pwr->thermal_pwrlevel = 0; 
 
-	if (kgsl_pwr_limits_set_freq(pwr->sysfs_pwr_limit,
-			pwr->pwrlevels[level].gpu_freq)) {
-		dev_err(device->dev,
-				"Failed to set sysfs thermal limit via limits fw\n");
-		mutex_lock(&device->mutex);
-		pwr->thermal_pwrlevel = level;
-		/* Update the current level using the new limit */
-		kgsl_pwrctrl_pwrlevel_change(device, pwr->active_pwrlevel);
-		mutex_unlock(&device->mutex);
-	}
+        kgsl_pwrctrl_pwrlevel_change(device, 0);
+        mutex_unlock(&device->mutex);
+    }
 
 	return count;
 }
@@ -1357,9 +1337,9 @@ static ssize_t default_pwrlevel_store(struct device *dev,
 		goto done;
 
 	mutex_lock(&device->mutex);
-	pwr->default_pwrlevel = level;
+	pwr->default_pwrlevel = 0;
 	pwrscale->gpu_profile.profile.initial_freq
-			= pwr->pwrlevels[level].gpu_freq;
+			= pwr->pwrlevels[0].gpu_freq;
 
 	mutex_unlock(&device->mutex);
 done:
@@ -2277,8 +2257,8 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 	if (pwr->grp_clks[0] == NULL)
 		pwr->grp_clks[0] = pwr->grp_clks[1];
 
-	if (of_property_read_bool(pdev->dev.of_node, "qcom,no-nap"))
-		device->pwrctrl.ctrl_flags |= BIT(KGSL_PWRFLAGS_NAP_OFF);
+	device->pwrctrl.ctrl_flags |= BIT(KGSL_PWRFLAGS_NAP_OFF);
+	pwr->interval_timeout = 10;
 
 	if (pwr->num_pwrlevels == 0) {
 		dev_err(device->dev, "No power levels are defined\n");
