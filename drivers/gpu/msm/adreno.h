@@ -253,7 +253,7 @@ enum adreno_gpurev {
 struct adreno_gpudev;
 
 /* Time to allow preemption to complete (in ms) */
-#define ADRENO_PREEMPT_TIMEOUT 10
+#define ADRENO_PREEMPT_TIMEOUT 150
 
 #define PREEMPT_SCRATCH_ADDR(dev, id) \
 	((dev)->preempt.scratch.gpuaddr + (id * sizeof(u64)))
