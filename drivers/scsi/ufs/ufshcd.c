@@ -1563,6 +1563,7 @@ static bool ufshcd_is_devfreq_scaling_required(struct ufs_hba *hba,
 {
 	struct ufs_clk_info *clki;
 	struct list_head *head = &hba->clk_list_head;
+    scale_up = true;
 
 	if (list_empty(head))
 		return false;
@@ -9169,7 +9170,7 @@ reinit:
 				if (ret)
 					goto out;
 			}
-			hba->clk_scaling.is_allowed = true;
+			hba->clk_scaling.is_allowed = false;
 			hba->clk_scaling.is_suspended = false;
 		}
 
@@ -10614,7 +10615,7 @@ static int ufshcd_resume(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 		ufshcd_resume_clkscaling(hba);
 
 	/* Set Auto-Hibernate timer if supported */
-	ufshcd_set_auto_hibern8_timer(hba);
+	// ufshcd_set_auto_hibern8_timer(hba);
 
 	/* Schedule clock gating in case of no access to UFS device yet */
 	ufshcd_release_all(hba);
@@ -10997,6 +10998,9 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	struct Scsi_Host *host = hba->host;
 	struct device *dev = hba->dev;
 	char recovery_wq_name[sizeof("ufs_recovery_00")];
+
+	hba->spm_lvl = 0;
+    hba->rpm_lvl = 0;
 
 	/*
 	 * dev_set_drvdata() must be called before any callbacks are registered

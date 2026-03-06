@@ -66,52 +66,16 @@ static u64 last_input_time;
 #define MIN_INPUT_INTERVAL (80 * USEC_PER_MSEC)
 
 static ssize_t store_input_boost_freq(struct kobject *kobj,
-				      struct kobj_attribute *attr,
-				      const char *buf, size_t count)
+                      struct kobj_attribute *attr,
+                      const char *buf, size_t count)
 {
-	int i, ntokens = 0;
-	unsigned int val, cpu;
-	const char *cp = buf;
-	bool enabled = false;
+    int i;
+    for_each_possible_cpu(i) {
+        per_cpu(sync_info, i).input_boost_freq = 0;
+    }
 
-	while ((cp = strpbrk(cp + 1, " :")))
-		ntokens++;
-
-	/* single number: apply to all CPUs */
-	if (!ntokens) {
-		if (sscanf(buf, "%u\n", &val) != 1)
-			return -EINVAL;
-		for_each_possible_cpu(i)
-			per_cpu(sync_info, i).input_boost_freq = val;
-		goto check_enable;
-	}
-
-	/* CPU:value pair */
-	if (!(ntokens % 2))
-		return -EINVAL;
-
-	cp = buf;
-	for (i = 0; i < ntokens; i += 2) {
-		if (sscanf(cp, "%u:%u", &cpu, &val) != 2)
-			return -EINVAL;
-		if (cpu >= num_possible_cpus())
-			return -EINVAL;
-
-		per_cpu(sync_info, cpu).input_boost_freq = val;
-		cp = strnchr(cp, PAGE_SIZE - (cp - buf), ' ');
-		cp++;
-	}
-
-check_enable:
-	for_each_possible_cpu(i) {
-		if (per_cpu(sync_info, i).input_boost_freq) {
-			enabled = true;
-			break;
-		}
-	}
-	input_boost_enabled = enabled;
-
-	return count;
+    input_boost_enabled = false;
+    return count;
 }
 
 static ssize_t show_input_boost_freq(struct kobject *kobj,

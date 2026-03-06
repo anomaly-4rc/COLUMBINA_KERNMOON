@@ -13,6 +13,7 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#include <linux/kernel.h>
 #include <linux/cpu.h>
 #include <linux/percpu-defs.h>
 #include <linux/slab.h>
@@ -24,6 +25,7 @@
 #include <linux/fs.h>
 #include <linux/mm.h>
 
+static DEFINE_PER_CPU(unsigned int, last_calculated_load);
 extern int sysctl_columbina_auto_purge;
 extern void iterate_supers(void (*f)(struct super_block *, void *), void *arg);
 extern void drop_pagecache_sb(struct super_block *sb, void *unused);
@@ -34,7 +36,7 @@ extern void drop_slab(void);
 #define DEF_SAMPLING_DOWN_FACTOR		(5)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
 #define MICRO_FREQUENCY_UP_THRESHOLD		(95)
-#define MICRO_FREQUENCY_MIN_SAMPLE_RATE		(10000)
+#define MICRO_FREQUENCY_MIN_SAMPLE_RATE		(12000)
 #define MIN_FREQUENCY_UP_THRESHOLD		(1)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
 
@@ -144,14 +146,14 @@ static void dbs_freq_increase(struct cpufreq_policy *policy, unsigned int freq)
  */
 static void moon_update(struct cpufreq_policy *policy)
 {
-	struct policy_dbs_info *policy_dbs = policy->governor_data;
-	struct moon_policy_dbs_info *dbs_info = to_dbs_info(policy_dbs);
-	struct dbs_data *dbs_data = policy_dbs->dbs_data;
-	struct moon_dbs_tuners *moon_tuners = dbs_data->tuners;
-	unsigned int load = dbs_update(policy);
-	unsigned int up_threshold = dbs_data->up_threshold;
-	/* Calculate the next frequency proportional to load */
-		unsigned int freq_next, min_f, max_f;
+    struct policy_dbs_info *policy_dbs = policy->governor_data;
+    struct moon_policy_dbs_info *dbs_info = to_dbs_info(policy_dbs);
+    struct dbs_data *dbs_data = policy_dbs->dbs_data;
+    struct moon_dbs_tuners *moon_tuners = dbs_data->tuners;
+    unsigned int load = dbs_update(policy);
+    unsigned int prev_load = per_cpu(last_calculated_load, policy->cpu);
+    unsigned int up_threshold = dbs_data->up_threshold;
+    unsigned int freq_next, min_f, max_f;
 
     /* --- LOGIC DYNAMIC THRESHOLD --- */
     if (moon_tuners->dynamic_threshold_enable && !moon_tuners->columbina_mode) {
@@ -159,13 +161,24 @@ static void moon_update(struct cpufreq_policy *policy)
             up_threshold += 5;
     }
 
-if (dbs_data->io_is_busy)
-        load += 20;
+    /* --- LOGIC IO BOOST --- */
+    if (dbs_data->io_is_busy) {
+        load += (100 - load) / 2; 
+    }
 
-if (moon_tuners->columbina_mode)
-		load = 100;
+    /* --- THE STABILIZER (Weighted Average) --- */
+    load = (load * 3 + prev_load) / 4;
 
-	dbs_info->freq_lo = 0;
+    if (abs(load - prev_load) < 3)
+        load = prev_load;
+
+    per_cpu(last_calculated_load, policy->cpu) = load;
+
+    /*Columbina Mode (Override Load) */
+    if (moon_tuners->columbina_mode)
+        load = 100;
+
+    dbs_info->freq_lo = 0;
 
 	/* Check for frequency increase */
 	if (load > up_threshold) { 
@@ -449,7 +462,7 @@ static int moon_init(struct dbs_data *dbs_data)
 	tuners->dynamic_threshold_enable = 1;
 	tuners->columbina_mode = 0;
 	tuners->io_is_busy = 1;
-	dbs_data->sampling_rate = MICRO_FREQUENCY_MIN_SAMPLE_RATE;
+	dbs_data->sampling_rate = 12000;
 	
 	cpu = get_cpu();
 	idle_time = get_cpu_idle_time_us(cpu, NULL);

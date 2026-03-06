@@ -12,8 +12,8 @@ export PATH="$TC_DIR/bin:$PATH"
 export ARCH=arm64
 export SUBARCH=arm64
 export CROSS_COMPILE=aarch64-linux-gnu-
-export KBUILD_BUILD_USER="Rin"
-export KBUILD_BUILD_HOST="Anomaly-arc"
+export KBUILD_BUILD_USER="Filia Lunae🌙"
+export KBUILD_BUILD_HOST="i5 2500"
 
 if [[ "$1" == "-c" || "$1" == "--clean" ]]; then
     echo "[*] Cleaning kernel output"

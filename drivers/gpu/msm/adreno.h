@@ -182,7 +182,7 @@
 /* One cannot wait forever for the core to idle, so set an upper limit to the
  * amount of time to wait for the core to go idle
  */
-#define ADRENO_IDLE_TIMEOUT (20 * 1000)
+#define ADRENO_IDLE_TIMEOUT (50 * 1000)
 
 #define ADRENO_FW_PFP 0
 #define ADRENO_FW_SQE 0
@@ -253,7 +253,7 @@ enum adreno_gpurev {
 struct adreno_gpudev;
 
 /* Time to allow preemption to complete (in ms) */
-#define ADRENO_PREEMPT_TIMEOUT 150
+#define ADRENO_PREEMPT_TIMEOUT 120
 
 #define PREEMPT_SCRATCH_ADDR(dev, id) \
 	((dev)->preempt.scratch.gpuaddr + (id * sizeof(u64)))

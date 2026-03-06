@@ -5,10 +5,9 @@
 #include <linux/printk.h>
 #include <linux/rcupdate.h>
 #include <linux/slab.h>
-
 #include <trace/events/sched.h>
-
 #include "sched.h"
+#include <linux/string.h>
 
 bool schedtune_initialized = false;
 extern struct reciprocal_value schedtune_spc_rdiv;
@@ -620,14 +619,17 @@ prefer_idle_read(struct cgroup_subsys_state *css, struct cftype *cft)
 	return st->prefer_idle;
 }
 
-static int
-prefer_idle_write(struct cgroup_subsys_state *css, struct cftype *cft,
-	    u64 prefer_idle)
+static int prefer_idle_write(struct cgroup_subsys_state *css, struct cftype *cft,
+        u64 prefer_idle)
 {
-	struct schedtune *st = css_st(css);
-	st->prefer_idle = !!prefer_idle;
-
-	return 0;
+    struct schedtune *st = css_st(css);
+    if (css->cgroup && css->cgroup->kn) {
+        if (strcmp(css->cgroup->kn->name, "top-app") == 0) {
+            prefer_idle = 1;
+        }
+    }
+    st->prefer_idle = !!prefer_idle;
+    return 0;
 }
 
 static s64
@@ -723,21 +725,22 @@ static void schedtune_attach(struct cgroup_taskset *tset)
 	}
 }
 
-static int
-boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
-	    s64 boost)
+static int boost_write(struct cgroup_subsys_state *css, struct cftype *cft,
+        s64 boost)
 {
-	struct schedtune *st = css_st(css);
+    struct schedtune *st = css_st(css);
 
-	if (boost < 0 || boost > 100)
-		return -EINVAL;
+    if (boost < 0 || boost > 100)
+        return -EINVAL;
 
-	st->boost = boost;
-
-	/* Update CPU boost */
-	schedtune_boostgroup_update(st->idx, st->boost);
-
-	return 0;
+    if (css->cgroup && css->cgroup->kn) {
+        if (strcmp(css->cgroup->kn->name, "top-app") == 0) {
+            boost = 20;
+        }
+    }
+    st->boost = boost;
+    schedtune_boostgroup_update(st->idx, st->boost);
+    return 0;
 }
 
 static struct cftype files[] = {

@@ -94,7 +94,7 @@ void blk_set_default_limits(struct queue_limits *lim)
 	lim->seg_boundary_mask = BLK_SEG_BOUNDARY_MASK;
 	lim->virt_boundary_mask = 0;
 	lim->max_segment_size = BLK_MAX_SEGMENT_SIZE;
-	lim->max_sectors = lim->max_hw_sectors = BLK_SAFE_MAX_SECTORS;
+	lim->max_sectors = lim->max_hw_sectors = 512;
 	lim->max_dev_sectors = 0;
 	lim->chunk_sectors = 0;
 	lim->max_write_same_sectors = 0;
@@ -165,7 +165,7 @@ void blk_queue_make_request(struct request_queue *q, make_request_fn *mfn)
 	/*
 	 * set defaults
 	 */
-	q->nr_requests = BLKDEV_MAX_RQ;
+	q->nr_requests = 256;
 
 	q->make_request_fn = mfn;
 	blk_queue_dma_alignment(q, 511);

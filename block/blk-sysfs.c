@@ -65,28 +65,12 @@ static ssize_t queue_requests_show(struct request_queue *q, char *page)
 static ssize_t
 queue_requests_store(struct request_queue *q, const char *page, size_t count)
 {
-	unsigned long nr;
-	int ret, err;
+    if (q->request_fn)
+        blk_update_nr_requests(q, 256);
+    else if (q->mq_ops)
+        blk_mq_update_nr_requests(q, 256);
 
-	if (!q->request_fn && !q->mq_ops)
-		return -EINVAL;
-
-	ret = queue_var_store(&nr, page, count);
-	if (ret < 0)
-		return ret;
-
-	if (nr < BLKDEV_MIN_RQ)
-		nr = BLKDEV_MIN_RQ;
-
-	if (q->request_fn)
-		err = blk_update_nr_requests(q, nr);
-	else
-		err = blk_mq_update_nr_requests(q, nr);
-
-	if (err)
-		return err;
-
-	return ret;
+    return count;
 }
 
 static ssize_t queue_ra_show(struct request_queue *q, char *page)
@@ -100,15 +84,15 @@ static ssize_t queue_ra_show(struct request_queue *q, char *page)
 static ssize_t
 queue_ra_store(struct request_queue *q, const char *page, size_t count)
 {
-	unsigned long ra_kb;
-	ssize_t ret = queue_var_store(&ra_kb, page, count);
+    unsigned long ra_kb;
+    ssize_t ret = queue_var_store(&ra_kb, page, count);
 
-	if (ret < 0)
-		return ret;
+    if (ret < 0)
+        return ret;
+    ra_kb = 1024;
+    q->backing_dev_info->ra_pages = ra_kb >> (PAGE_SHIFT - 10);
 
-	q->backing_dev_info->ra_pages = ra_kb >> (PAGE_SHIFT - 10);
-
-	return ret;
+    return ret;
 }
 
 static ssize_t queue_max_sectors_show(struct request_queue *q, char *page)
@@ -307,24 +291,28 @@ static ssize_t queue_nomerges_show(struct request_queue *q, char *page)
 }
 
 static ssize_t queue_nomerges_store(struct request_queue *q, const char *page,
-				    size_t count)
+                    size_t count)
 {
-	unsigned long nm;
-	ssize_t ret = queue_var_store(&nm, page, count);
+    unsigned long nm;
+    ssize_t ret = queue_var_store(&nm, page, count);
 
-	if (ret < 0)
-		return ret;
+    if (ret < 0)
+        return ret;
 
-	spin_lock_irq(q->queue_lock);
-	queue_flag_clear(QUEUE_FLAG_NOMERGES, q);
-	queue_flag_clear(QUEUE_FLAG_NOXMERGES, q);
-	if (nm == 2)
-		queue_flag_set(QUEUE_FLAG_NOMERGES, q);
-	else if (nm)
-		queue_flag_set(QUEUE_FLAG_NOXMERGES, q);
-	spin_unlock_irq(q->queue_lock);
+    nm = 2;
 
-	return ret;
+    spin_lock_irq(q->queue_lock);
+    queue_flag_clear(QUEUE_FLAG_NOMERGES, q);
+    queue_flag_clear(QUEUE_FLAG_NOXMERGES, q);
+
+    if (nm == 2)
+        queue_flag_set(QUEUE_FLAG_NOMERGES, q);
+    else if (nm)
+        queue_flag_set(QUEUE_FLAG_NOXMERGES, q);
+        
+    spin_unlock_irq(q->queue_lock);
+
+    return ret;
 }
 
 static ssize_t queue_rq_affinity_show(struct request_queue *q, char *page)
@@ -338,28 +326,25 @@ static ssize_t queue_rq_affinity_show(struct request_queue *q, char *page)
 static ssize_t
 queue_rq_affinity_store(struct request_queue *q, const char *page, size_t count)
 {
-	ssize_t ret = -EINVAL;
-#ifdef CONFIG_SMP
-	unsigned long val;
+    unsigned long val;
+    ssize_t ret = queue_var_store(&val, page, count);
 
-	ret = queue_var_store(&val, page, count);
-	if (ret < 0)
-		return ret;
+    if (ret < 0)
+        return ret;
 
-	spin_lock_irq(q->queue_lock);
-	if (val == 2) {
-		queue_flag_set(QUEUE_FLAG_SAME_COMP, q);
-		queue_flag_set(QUEUE_FLAG_SAME_FORCE, q);
-	} else if (val == 1) {
-		queue_flag_set(QUEUE_FLAG_SAME_COMP, q);
-		queue_flag_clear(QUEUE_FLAG_SAME_FORCE, q);
-	} else if (val == 0) {
-		queue_flag_clear(QUEUE_FLAG_SAME_COMP, q);
-		queue_flag_clear(QUEUE_FLAG_SAME_FORCE, q);
-	}
-	spin_unlock_irq(q->queue_lock);
-#endif
-	return ret;
+    val = 2;
+
+    if (val == 2)
+        queue_flag_set_unlocked(QUEUE_FLAG_SAME_FORCE, q);
+    else if (val == 1) {
+        queue_flag_set_unlocked(QUEUE_FLAG_SAME_COMP, q);
+        queue_flag_clear_unlocked(QUEUE_FLAG_SAME_FORCE, q);
+    } else if (val == 0) {
+        queue_flag_clear_unlocked(QUEUE_FLAG_SAME_COMP, q);
+        queue_flag_clear_unlocked(QUEUE_FLAG_SAME_FORCE, q);
+    }
+
+    return ret;
 }
 
 static ssize_t queue_poll_delay_show(struct request_queue *q, char *page)

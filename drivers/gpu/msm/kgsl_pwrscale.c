@@ -1029,7 +1029,7 @@ int kgsl_pwrscale_init(struct device *dev, const char *governor)
 		data->bus.num = 0;
 
 	devfreq = devfreq_add_device(dev, &pwrscale->gpu_profile.profile,
-			governor, pwrscale->gpu_profile.private_data);
+			"performance", pwrscale->gpu_profile.private_data);
 	if (IS_ERR(devfreq)) {
 		device->pwrscale.enabled = false;
 		return PTR_ERR(devfreq);
@@ -1062,7 +1062,7 @@ int kgsl_pwrscale_init(struct device *dev, const char *governor)
 		kgsl_pwrctrl_disable_unused_opp(device, device->busmondev);
 		if (!ret)
 			bus_devfreq = devfreq_add_device(device->busmondev,
-				&pwrscale->bus_profile.profile, "gpubw_mon",
+				&pwrscale->bus_profile.profile, "performance",
 				NULL);
 
 		if (IS_ERR_OR_NULL(bus_devfreq))
