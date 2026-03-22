@@ -18,10 +18,10 @@
  * Tick interval becomes to 3333333 due to
  * rounding error when HZ=300.
  */
-#define DEFAULT_SCHED_RAVG_WINDOW (14500000)
+#define DEFAULT_SCHED_RAVG_WINDOW (13698630)
 #else
 /* Default window size (in ns) = 12ms */
-#define DEFAULT_SCHED_RAVG_WINDOW 14500000
+#define DEFAULT_SCHED_RAVG_WINDOW 13698630
 #endif
 
 /* Max window size (in ns) = 1s */

@@ -17,7 +17,7 @@ extern unsigned int adreno_drawobj_timeout;
  * sizes that can be chosen at runtime
  */
 
-#define ADRENO_DISPATCH_DRAWQUEUE_SIZE 128
+#define ADRENO_DISPATCH_DRAWQUEUE_SIZE 256
 
 #define DRAWQUEUE_NEXT(_i, _s) (((_i) + 1) % (_s))
 
