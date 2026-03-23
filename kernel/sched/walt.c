@@ -2673,7 +2673,7 @@ unsigned int __read_mostly sysctl_sched_group_upmigrate_pct = 65;
  * migrated.
  */
 unsigned int __read_mostly sched_group_downmigrate =6000000;
-unsigned int __read_mostly sysctl_sched_group_downmigrate_pct = 95;
+unsigned int __read_mostly sysctl_sched_group_downmigrate_pct = 45;
 
 static inline
 void update_best_cluster(struct related_thread_group *grp,
