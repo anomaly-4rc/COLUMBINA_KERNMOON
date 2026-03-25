@@ -3,15 +3,19 @@ set -e
 SECONDS=0
 
 DEFCONFIG="vendor/fog-perf_defconfig"
-CORES=${CORES:-4}
+CORES=${CORES:-$(nproc)}
 
-TC_DIR="$(pwd)/tc/gcc-aarch64"
 OUT_DIR="$(pwd)/out"
 
-export PATH="$TC_DIR/bin:$PATH"
 export ARCH=arm64
 export SUBARCH=arm64
+
 export CROSS_COMPILE=aarch64-linux-gnu-
+export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+
+export HOSTCC=gcc
+export HOSTCXX=g++
+export LD=aarch64-linux-gnu-ld
 export KBUILD_BUILD_USER="Filia Lunae"
 export KBUILD_BUILD_HOST="i5 2500"
 
