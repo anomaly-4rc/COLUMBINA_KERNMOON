@@ -17,7 +17,7 @@ export HOSTCC=gcc
 export HOSTCXX=g++
 export LD=aarch64-linux-gnu-ld
 export KBUILD_BUILD_USER="Filia Lunae"
-export KBUILD_BUILD_HOST="i5 2500"
+export KBUILD_BUILD_HOST="END OF BUILD"
 
 if [[ "$1" == "-c" || "$1" == "--clean" ]]; then
     echo "[*] Cleaning kernel output"
