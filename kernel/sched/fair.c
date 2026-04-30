@@ -181,15 +181,15 @@ unsigned int sched_capacity_margin_down_boosted[CPU_NR] = {
 
 #ifdef CONFIG_SCHED_WALT
 /* 1ms default for 20ms window size scaled to 1024 */
-unsigned int sysctl_sched_min_task_util_for_boost = 51;
+unsigned int sysctl_sched_min_task_util_for_boost = 40;
 /* 0.68ms default for 20ms window size scaled to 1024 */
-unsigned int sysctl_sched_min_task_util_for_colocation = 35;
+unsigned int sysctl_sched_min_task_util_for_colocation = 10;
 __read_mostly unsigned int sysctl_sched_prefer_spread = 1;
-unsigned int sysctl_walt_rtg_cfs_boost_prio = 99; /* disabled by default */
-unsigned int sysctl_walt_low_latency_task_threshold; /* disabled by default */
+unsigned int sysctl_walt_rtg_cfs_boost_prio = 20; /* disabled by default */
+unsigned int sysctl_walt_low_latency_task_threshold =1; /* disabled by default */
 __read_mostly unsigned int sysctl_sched_force_lb_enable = 1;
 #endif
-unsigned int sched_small_task_threshold = 102;
+unsigned int sched_small_task_threshold = 32;
 
 static inline void update_load_add(struct load_weight *lw, unsigned long inc)
 {

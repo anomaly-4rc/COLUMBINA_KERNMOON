@@ -40,7 +40,7 @@ enum {
 };
 
 enum {
-	KYBER_MIN_DEPTH = 256,
+	KYBER_MIN_DEPTH = 1024,
 
 	/*
 	 * In order to prevent starvation of synchronous requests by a flood of
@@ -58,18 +58,18 @@ enum {
  * So, we cap these to a reasonable value.
  */
 static const unsigned int kyber_depth[] = {
-	[KYBER_READ] = 256,
-	[KYBER_SYNC_WRITE] = 128,
-	[KYBER_OTHER] = 64,
+	[KYBER_READ] = 128,
+	[KYBER_SYNC_WRITE] = 64,
+	[KYBER_OTHER] = 32,
 };
 
 /*
  * Scheduling domain batch sizes. We favor reads.
  */
 static const unsigned int kyber_batch_size[] = {
-	[KYBER_READ] = 32,
-	[KYBER_SYNC_WRITE] = 16,
-	[KYBER_OTHER] = 8,
+	[KYBER_READ] = 16,
+	[KYBER_SYNC_WRITE] = 8,
+	[KYBER_OTHER] = 4,
 };
 
 
