@@ -65,7 +65,7 @@ export KBUILD_OBJDUMP=objdump
 export HOSTCC=gcc
 export HOSTCXX=g++
 export KBUILD_BUILD_USER="Filia-Lunae"
-export KBUILD_BUILD_HOST="Arch-Arm64-Snapdragon-680"
+export KBUILD_BUILD_HOST="Arch-Linux ARM-aarch64_Qualcomm-Technologies,_Inc.-FOG-KHAJE-IDP-nopmi"
 mkdir -p "$OUT_DIR"
 mkdir -p /tmp
 

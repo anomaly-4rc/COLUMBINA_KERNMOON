@@ -26,7 +26,10 @@ static const struct virtual_sensor_data qti_virtual_sensors[] = {
 				"cpu1-silver-usr",
 				"cpu2-silver-usr",
 				"cpu3-silver-usr"},
-		.logic = VIRT_MAXIMUM,
+		.logic = VIRT_WEIGHTED_AVG,
+		.coefficient_ct = 4,
+		.coefficients = {25, 25, 25, 25},
+		.avg_denominator = 100,
 	},
 	{
 		.virt_zone_name = "gold-virt-max-step",
@@ -35,7 +38,10 @@ static const struct virtual_sensor_data qti_virtual_sensors[] = {
 				"cpu1-gold-usr",
 				"cpu2-gold-usr",
 				"cpu3-gold-usr"},
-		.logic = VIRT_MAXIMUM,
+		.logic = VIRT_WEIGHTED_AVG,
+		.coefficient_ct = 4,
+		.coefficients = {25, 25, 25, 25},
+		.avg_denominator = 100,
 	},
 	{
 		.virt_zone_name = "hexa-silv-max-step",
