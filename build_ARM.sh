@@ -7,7 +7,7 @@ chmod 1777 /tmp
 
 # CONFIG
 DEFCONFIG="vendor/fog-perf_defconfig"
-CORES=${CORES:-7}
+CORES=${CORES:-8}
 OUT_DIR="$(pwd)/out"
 
 # ENVIRONMENT
