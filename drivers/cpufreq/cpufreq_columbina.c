@@ -213,14 +213,21 @@ static unsigned int moon_dbs_update(struct cpufreq_policy *policy)
 	struct moon_policy_dbs_info *dbs_info = to_dbs_info(policy_dbs);
 	int sample_type = dbs_info->sample_type;
 
-    static unsigned long last_purge_time = 0;
-  if (sysctl_columbina_auto_purge == 1) {
+        static unsigned long last_purge_time = 0;
+    struct sysinfo i;
+
+    if (sysctl_columbina_auto_purge == 1) {
         if (time_after(jiffies, last_purge_time + msecs_to_jiffies(600000))) {
-            extern void drop_caches_bh(struct work_struct *work); 
-            iterate_supers(drop_pagecache_sb, NULL);
-            drop_slab();
-            last_purge_time = jiffies;
-            pr_info("Columbina_Guard: Memory swept safely.\n");
+            
+            si_meminfo(&i);
+            if (i.freeram < (i.totalram >> 3)) { 
+                iterate_supers(drop_pagecache_sb, NULL);
+                drop_slab();
+                last_purge_time = jiffies;
+                pr_info("Columbina_Guard: High pressure! Memory swept safely.\n");
+            } else {
+                last_purge_time = jiffies; 
+            }
         }
     }
 

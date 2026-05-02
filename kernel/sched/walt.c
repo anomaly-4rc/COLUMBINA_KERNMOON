@@ -107,7 +107,7 @@ static __read_mostly unsigned int sched_io_is_busy = 1;
 __read_mostly unsigned int sysctl_sched_window_stats_policy =
 	WINDOW_STATS_MAX_RECENT_AVG;
 
-unsigned int sysctl_sched_ravg_window_nr_ticks = (HZ / NR_WINDOWS_PER_SEC);
+unsigned int sysctl_sched_ravg_window_nr_ticks = 2;
 
 static unsigned int display_sched_ravg_window_nr_ticks =
 	(HZ / NR_WINDOWS_PER_SEC);
@@ -3700,20 +3700,15 @@ int sched_ravg_window_handler(struct ctl_table *table,
 				int write, void __user *buffer, size_t *lenp,
 				loff_t *ppos)
 {
-	int ret = -EPERM;
+	int ret;
 	static DEFINE_MUTEX(mutex);
 	unsigned int prev_value;
 
 	mutex_lock(&mutex);
-
-	if (write && (HZ != 250 || !sysctl_sched_dynamic_ravg_window_enable))
-		goto unlock;
-
 	prev_value = sysctl_sched_ravg_window_nr_ticks;
 	ret = proc_douintvec_ravg_window(table, write, buffer, lenp, ppos);
 	if (ret || !write || (prev_value == sysctl_sched_ravg_window_nr_ticks))
 		goto unlock;
-
 	sched_window_nr_ticks_change();
 
 unlock:
@@ -3723,17 +3718,10 @@ unlock:
 
 void sched_set_refresh_rate(enum fps fps)
 {
-	if (HZ == 250 && sysctl_sched_dynamic_ravg_window_enable) {
-		if (fps > FPS90)
-			display_sched_ravg_window_nr_ticks = 2;
-		else if (fps == FPS90)
-			display_sched_ravg_window_nr_ticks = 3;
-		else
-			display_sched_ravg_window_nr_ticks = 5;
 
-		sched_window_nr_ticks_change();
-	}
+	return;
 }
+
 EXPORT_SYMBOL(sched_set_refresh_rate);
 
 /* Migration margins */
