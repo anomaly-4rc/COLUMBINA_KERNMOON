@@ -15,8 +15,8 @@
 #include "kgsl_sharedmem.h"
 
 #define KGSL_MAX_POOLS 4
-#define KGSL_MAX_POOL_ORDER 8
-#define KGSL_MAX_RESERVED_PAGES 4096
+#define KGSL_MAX_POOL_ORDER 9
+#define KGSL_MAX_RESERVED_PAGES 32768
 
 /**
  * struct kgsl_page_pool - Structure to hold information for the pool

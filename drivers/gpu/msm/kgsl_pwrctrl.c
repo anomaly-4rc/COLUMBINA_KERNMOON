@@ -660,13 +660,14 @@ void kgsl_pwrctrl_pwrlevel_change(struct kgsl_device *device,
 					pwr->gpu_bimc_int_clk_freq,
 					"bimc_gpu_clk");
 			pwr->gpu_bimc_interface_enabled = true;
-		} else if (pwr->previous_pwrlevel == 0
-				&& pwr->gpu_bimc_interface_enabled) {
-			clk_disable_unprepare(pwr->gpu_bimc_int_clk);
-			pwr->gpu_bimc_interface_enabled = false;
 		}
-	}
-
+   else if (pwr->previous_pwrlevel == 0 && pwr->gpu_bimc_interface_enabled) {
+    if (pwr->active_pwrlevel != 0) {
+        clk_disable_unprepare(pwr->gpu_bimc_int_clk);
+        pwr->gpu_bimc_interface_enabled = false;
+    }
+  }
+}
 	/* Change register settings if any AFTER pwrlevel change*/
 	kgsl_pwrctrl_pwrlevel_change_settings(device, 1);
 
