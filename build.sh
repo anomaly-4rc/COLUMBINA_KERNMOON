@@ -16,8 +16,8 @@ export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 export HOSTCC=gcc
 export HOSTCXX=g++
 export LD=aarch64-linux-gnu-ld
-export KBUILD_BUILD_USER="Filia Lunae"
-export KBUILD_BUILD_HOST="END OF BUILD"
+export KBUILD_BUILD_USER="Filia-Lunae"
+export KBUILD_BUILD_HOST="Luna-Arch-X86"
 
 if [[ "$1" == "-c" || "$1" == "--clean" ]]; then
     echo "[*] Cleaning kernel output"
