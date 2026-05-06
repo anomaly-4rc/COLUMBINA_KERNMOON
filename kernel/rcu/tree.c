@@ -491,14 +491,14 @@ module_param(qhimark, long, 0444);
 module_param(qlowmark, long, 0444);
 module_param(qovld, long, 0444);
 
-static ulong jiffies_till_first_fqs = IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD) ? 0 : ULONG_MAX;
-static ulong jiffies_till_next_fqs = ULONG_MAX;
+static ulong jiffies_till_first_fqs = 1;
+static ulong jiffies_till_next_fqs = 1;
 static bool rcu_kick_kthreads;
-static int rcu_divisor = 7;
+static int rcu_divisor = 5;
 module_param(rcu_divisor, int, 0644);
 
 /* Force an exit from rcu_do_batch() after 3 milliseconds. */
-static long rcu_resched_ns = 3 * NSEC_PER_MSEC;
+static long rcu_resched_ns = 1 * NSEC_PER_MSEC;
 module_param(rcu_resched_ns, long, 0644);
 
 /*
