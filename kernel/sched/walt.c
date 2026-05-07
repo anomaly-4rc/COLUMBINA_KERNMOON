@@ -24,7 +24,7 @@ const char *migrate_type_names[] = {"GROUP_TO_RQ", "RQ_TO_GROUP",
 #define SCHED_FREQ_ACCOUNT_WAIT_TIME 1
 #define SCHED_ACCOUNT_WAIT_TIME 1
 
-#define EARLY_DETECTION_DURATION 5000000
+#define EARLY_DETECTION_DURATION 3800000
 
 static ktime_t ktime_last;
 static bool sched_ktime_suspended;

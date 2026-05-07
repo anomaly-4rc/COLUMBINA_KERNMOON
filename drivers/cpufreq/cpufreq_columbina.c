@@ -162,9 +162,17 @@ static void moon_update(struct cpufreq_policy *policy)
     }
 
     /* --- LOGIC IO BOOST --- */
-    if (dbs_data->io_is_busy) {
-        load += (100 - load) / 2; 
+if (dbs_data->io_is_busy) {
+    if (load > 50 && policy->cur > (policy->max / 2)) {
+        /* Only hit 100 if the load is already high AND the current frequency is above 50% (meaning the load is really heavy) */
+        load = 100;
+    } else {
+        /* Boost 75% but still go through the weighted average process below
+so that the transition doesn't shock the hardware too much */
+        load += (100 - load) * 3 / 4;
     }
+}
+
 
     /* --- THE STABILIZER (Weighted Average) --- */
     load = (load * 3 + prev_load) / 4;
@@ -216,20 +224,21 @@ static unsigned int moon_dbs_update(struct cpufreq_policy *policy)
         static unsigned long last_purge_time = 0;
     struct sysinfo i;
 
-    if (sysctl_columbina_auto_purge == 1) {
-        if (time_after(jiffies, last_purge_time + msecs_to_jiffies(600000))) {
-            
-            si_meminfo(&i);
-            if (i.freeram < (i.totalram >> 3)) { 
-                iterate_supers(drop_pagecache_sb, NULL);
-                drop_slab();
-                last_purge_time = jiffies;
-                pr_info("Columbina_Guard: High pressure! Memory swept safely.\n");
-            } else {
-                last_purge_time = jiffies; 
-            }
+if (sysctl_columbina_auto_purge == 1) {
+    if (time_after(jiffies, last_purge_time + msecs_to_jiffies(600000))) {
+        si_meminfo(&i);
+        
+        if (i.freeram < (i.totalram >> 3) && per_cpu(last_calculated_load, policy->cpu) < 80) { 
+            iterate_supers(drop_pagecache_sb, NULL);
+            drop_slab();
+            last_purge_time = jiffies;
+            pr_info("Columbina_Guard: Memory swept safely under low load.\n");
+        } else {
+            last_purge_time = jiffies - msecs_to_jiffies(300000); 
         }
     }
+}
+
 
 	/* Common NORMAL_SAMPLE setup */
 	dbs_info->sample_type = OD_NORMAL_SAMPLE;

@@ -20,27 +20,34 @@ static void moon_merged_requests(struct request_queue *q, struct request *rq,
 
 static int moon_dispatch(struct request_queue *q, int force)
 {
-	struct moon_data *nd = q->elevator->elevator_data;
-	struct request *rq, *tmp;
+    struct moon_data *nd = q->elevator->elevator_data;
+    struct request *rq, *tmp;
+    int dispatched = 0;
+    const int max_read_batch = 4;
 
-	list_for_each_entry_safe(rq, tmp, &nd->queue, queuelist) {
-		if (rq_data_dir(rq) == READ) {
-			list_del_init(&rq->queuelist);
-			elv_dispatch_sort(q, rq);
-			return 1;
-		}
-	}	
-	
-	rq = list_first_entry_or_null(&nd->queue, struct request, queuelist);
-	if (rq) {
-		list_del_init(&rq->queuelist);
-		elv_dispatch_sort(q, rq);
-		return 1;
-	}
+    if (list_empty(&nd->queue))
+        return 0;
 
-	return 0;
+    list_for_each_entry_safe(rq, tmp, &nd->queue, queuelist) {
+        if (rq_data_dir(rq) == READ) {
+            list_del_init(&rq->queuelist);
+            elv_dispatch_sort(q, rq);
+            dispatched++;
+            
+            if (dispatched >= max_read_batch)
+                break; 
+        }
+    }
+
+    if (dispatched == 0 && !list_empty(&nd->queue)) {
+        rq = list_first_entry(&nd->queue, struct request, queuelist);
+        list_del_init(&rq->queuelist);
+        elv_dispatch_sort(q, rq);
+        dispatched++;
+    }
+
+    return dispatched > 0;
 }
-
 
 static void moon_add_request(struct request_queue *q, struct request *rq)
 {
