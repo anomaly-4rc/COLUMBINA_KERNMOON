@@ -46,6 +46,14 @@ done
 export CROSS_COMPILE
 unset LD
 
+if command -v ccache >/dev/null 2>&1; then
+    CC="ccache ${CROSS_COMPILE}gcc"
+    echo "[*] CCache detected and enabled!"
+else
+    CC="${CROSS_COMPILE}gcc"
+    echo "[!] CCache not found, using plain GCC."
+fi
+
 # force native binutils
 export AR=ar
 export NM=nm
@@ -83,6 +91,7 @@ echo "[*] Starting compilation (-j$CORES)..."
 
 make -j"$CORES" O="$OUT_DIR" \
     CROSS_COMPILE=$CROSS_COMPILE \
+    CC="$CC" \
     AR=ar \
     NM=nm \
     OBJCOPY=objcopy \
@@ -90,7 +99,7 @@ make -j"$CORES" O="$OUT_DIR" \
     STRIP=strip \
     KCFLAGS="-fno-pie" \
     Image.gz
-
+    
 # RESULT
 KERNEL_IMAGE="$OUT_DIR/arch/arm64/boot/Image.gz"
 
