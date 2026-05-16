@@ -85,11 +85,9 @@ if [[ ! -f "$OUT_DIR/.config" ]]; then
     make O="$OUT_DIR" olddefconfig
 fi
 
-
 # BUILD START
 echo "[*] Starting compilation (-j$CORES)..."
 
-# Tambahin 'dtbs' di akhir baris make
 make -j"$CORES" O="$OUT_DIR" \
     CROSS_COMPILE=$CROSS_COMPILE \
     CC="$CC" \
@@ -99,24 +97,23 @@ make -j"$CORES" O="$OUT_DIR" \
     OBJDUMP=objdump \
     STRIP=strip \
     KCFLAGS="-fno-pie" \
-    Image.gz dtbs
+    Image.gz
 
 # RESULT
 KERNEL_IMAGE="$OUT_DIR/arch/arm64/boot/Image.gz"
-DTB_DIR="$OUT_DIR/arch/arm64/boot/dts/vendor/qcom"
+# DTB_DIR="$OUT_DIR/arch/arm64/boot/dts/vendor/qcom"
 
 if [[ -f "$KERNEL_IMAGE" ]]; then
     echo "====================================="
     echo "✅ COMPILE SUCCESSFUL"
-   
-    echo "[*] Combining DTBs..."
-cat "$DTB_DIR"/*.dtb > "$OUT_DIR/dtb_combined"
 
-    echo "[*] Creating Image.gz-dtb..."
-    cat "$KERNEL_IMAGE" "$OUT_DIR/dtb_combined" > "$OUT_DIR/Image.gz-dtb"
-    
+    # echo "[*] Combining DTBs..."
+# cat "$DTB_DIR"/*.dtb > "$OUT_DIR/dtb_combined"
+
+    # echo "[*] Creating Image.gz-dtb..."
+    # cat "$KERNEL_IMAGE" "$OUT_DIR/dtb_combined" > "$OUT_DIR/Image.gz-dtb"
+
     echo "Time: $((SECONDS/60))m $((SECONDS%60))s"
-    echo "Final Kernel: $OUT_DIR/Image.gz-dtb"
     echo "====================================="
 else
     echo "❌ Compilation failed."
