@@ -48,7 +48,7 @@
  * The max size that a non-root user is allowed to grow the pipe. Can
  * be set by root in /proc/sys/fs/pipe-max-size
  */
-unsigned int pipe_max_size = 2097152;
+unsigned int pipe_max_size = 4194304;
 
 /* Maximum allocatable pages per user. Hard limit is unset by default, soft
  * matches default values.
