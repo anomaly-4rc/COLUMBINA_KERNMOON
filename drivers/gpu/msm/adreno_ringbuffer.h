@@ -14,7 +14,7 @@
 	((struct adreno_device *) (((void *) (_rb)) - _RB_OFFSET((_rb)->id)))
 
 /* Adreno ringbuffer size in bytes */
-#define KGSL_RB_SIZE (128 * 1024)
+#define KGSL_RB_SIZE (256 * 1024)
 
 /*
  * A handy macro to convert the RB size to dwords since most ringbuffer
