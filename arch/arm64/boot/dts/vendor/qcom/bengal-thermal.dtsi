@@ -572,7 +572,7 @@
 		wake-capable-sensor;
 		trips {
 			gpu_step_trip: gpu-trip {
-				temperature = <95000>;
+				temperature = <105000>;
 				hysteresis = <0>;
 				type = "passive";
 			};
@@ -639,7 +639,7 @@
 
 		trips {
 			cpu4_5_config: cpu-4-5-config {
-				temperature = <110000>;
+				temperature = <120000>;
 				hysteresis = <10000>;
 				type = "passive";
 			};
@@ -667,7 +667,7 @@
 
 		trips {
 			cpu6_7_config: cpu-6-7-config {
-				temperature = <110000>;
+				temperature = <120000>;
 				hysteresis = <10000>;
 				type = "passive";
 			};
@@ -695,7 +695,7 @@
 
 		trips {
 			silv_cpus_config: silv-cpus-config {
-				temperature = <110000>;
+				temperature = <120000>;
 				hysteresis = <10000>;
 				type = "passive";
 			};
@@ -733,7 +733,7 @@
 
 		trips {
 			cpu4_config: cpu4-config {
-				temperature = <110000>;
+				temperature = <120000>;
 				hysteresis = <10000>;
 				type = "passive";
 			};
@@ -756,7 +756,7 @@
 
 		trips {
 			cpu5_config: cpu5-config {
-				temperature = <110000>;
+				temperature = <120000>;
 				hysteresis = <10000>;
 				type = "passive";
 			};
@@ -779,7 +779,7 @@
 
 		trips {
 			cpu6_config: cpu6-config {
-				temperature = <110000>;
+				temperature = <120000>;
 				hysteresis = <10000>;
 				type = "passive";
 			};
@@ -802,7 +802,7 @@
 
 		trips {
 			cpu7_config: cpu7-config {
-				temperature = <110000>;
+				temperature = <120000>;
 				hysteresis = <10000>;
 				type = "passive";
 			};
