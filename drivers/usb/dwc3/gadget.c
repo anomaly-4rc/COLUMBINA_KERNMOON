@@ -1823,17 +1823,8 @@ static int dwc3_gadget_ep_dequeue(struct usb_ep *ep,
 	int				ret = 0;
 
 	if (atomic_read(&dwc->in_lpm)) {
-		dev_info(dwc->dev, "LPM detected! Waking up USB controller...\n");
-		
-		if (dwc->dev) {
-			pm_runtime_get_sync(dwc->dev);
-			pm_runtime_put_sync(dwc->dev);
-		}
-		
-		if (atomic_read(&dwc->in_lpm)) {
-			dev_err(dwc->dev, "Unable to dequeue while in LPM (Wakeup Failed)\n");
-			return -EAGAIN;
-		}
+		dev_err(dwc->dev, "Unable to dequeue while in LPM\n");
+		return -EAGAIN;
 	}
 
 	trace_dwc3_ep_dequeue(req);
