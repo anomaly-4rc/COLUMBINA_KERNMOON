@@ -169,7 +169,7 @@ if (dbs_data->io_is_busy) {
     } else {
         /* Boost 75% but still go through the weighted average process below
 so that the transition doesn't shock the hardware too much */
-        load += (100 - load) * 3 / 4;
+        load += (100 - load) * 1 / 2;
     }
 }
 
