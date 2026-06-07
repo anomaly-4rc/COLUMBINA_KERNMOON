@@ -9,7 +9,7 @@ export SUBARCH=arm64
 TC_DIR="$(pwd)/../android_prebuilts_clang-standalone"
 export PATH="$TC_DIR/bin:$PATH"
 export USE_CCACHE=1
-export CCACHE_DIR="/media/filia/DiskB/.ccache"
+# export CCACHE_DIR="/media/filia/DiskB/.ccache"
 export CC="ccache clang"
 
 if [[ $1 = "-c" || $1 = "--clean" ]]; then
