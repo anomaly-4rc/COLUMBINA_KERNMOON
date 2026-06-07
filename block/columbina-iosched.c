@@ -24,15 +24,29 @@ static int moon_dispatch(struct request_queue *q, int force)
     struct request *rq, *tmp;
     int dispatched = 0;
     const int max_read_batch = 4;
+    static int read_latency_counter = 0; 
 
     if (list_empty(&nd->queue))
         return 0;
+
+   //passed 16 writes in consecutive reads
+if (read_latency_counter >= 16) {
+        read_latency_counter = 0;
+        list_for_each_entry_safe(rq, tmp, &nd->queue, queuelist) {
+            if (rq_data_dir(rq) == WRITE) {
+                list_del_init(&rq->queuelist);
+                elv_dispatch_sort(q, rq);
+                return 1;
+            }
+        }
+    }
 
     list_for_each_entry_safe(rq, tmp, &nd->queue, queuelist) {
         if (rq_data_dir(rq) == READ) {
             list_del_init(&rq->queuelist);
             elv_dispatch_sort(q, rq);
             dispatched++;
+			read_latency_counter++;
             
             if (dispatched >= max_read_batch)
                 break; 
@@ -44,6 +58,7 @@ static int moon_dispatch(struct request_queue *q, int force)
         list_del_init(&rq->queuelist);
         elv_dispatch_sort(q, rq);
         dispatched++;
+		read_latency_counter = 0;
     }
 
     return dispatched > 0;
