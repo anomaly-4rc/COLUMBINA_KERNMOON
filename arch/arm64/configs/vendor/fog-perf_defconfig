@@ -1,4 +1,4 @@
-CONFIG_LOCALVERSION="-Neko〃Poject〃クチン-ᗜ⩊ᗜ"
+CONFIG_LOCALVERSION="-Neko〃Project〃クチン-ᗜ⩊ᗜ"
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_AUDIT=y
 # CONFIG_AUDITSYSCALL is not set
