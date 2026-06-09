@@ -26,7 +26,6 @@
 #include <linux/mm.h>
 
 static DEFINE_PER_CPU(unsigned int, last_calculated_load);
-static DEFINE_PER_CPU(unsigned int, columbina_hold_count);
 extern int sysctl_columbina_auto_purge;
 extern void iterate_supers(void (*f)(struct super_block *, void *), void *arg);
 extern void drop_pagecache_sb(struct super_block *sb, void *unused);
@@ -163,15 +162,17 @@ static void moon_update(struct cpufreq_policy *policy)
     }
 
     /* --- LOGIC IO BOOST --- */
-    if (dbs_data->io_is_busy) {
-        if (load > 50 && policy->cur > (policy->max / 2)) {
-            /* Heavy load handling */
-            load = 100;
-        } else {
-            /* Soft boost adjustment */
-            load += (100 - load) * 1 / 2;
-        }
+if (dbs_data->io_is_busy) {
+    if (load > 50 && policy->cur > (policy->max / 2)) {
+        /* Only hit 100 if the load is already high AND the current frequency is above 50% (meaning the load is really heavy) */
+        load = 100;
+    } else {
+        /* Boost 75% but still go through the weighted average process below
+so that the transition doesn't shock the hardware too much */
+        load += (100 - load) * 1 / 2;
     }
+}
+
 
     /* --- THE STABILIZER (Weighted Average) --- */
     if (load > prev_load + 35) {
@@ -184,61 +185,36 @@ static void moon_update(struct cpufreq_policy *policy)
 
     per_cpu(last_calculated_load, policy->cpu) = load;
 
-    /* Columbina Gaming Mode Override */
-    if (moon_tuners->columbina_mode) {
-        load = (load < 85) ? 85 : load;
-    }
+    /*Columbina Mode (Override Load) */
+    if (moon_tuners->columbina_mode)
+        load = 100;
 
     dbs_info->freq_lo = 0;
 
-    /* Check for frequency increase - Columbina Exclusive Target Load Scale */
-    if (load > up_threshold) {
-        per_cpu(columbina_hold_count, policy->cpu) = 0;
-        
+	/* Check for frequency increase */
+	if (load > up_threshold) { 
         if (policy->cur < policy->max)
             policy_dbs->rate_mult = dbs_data->sampling_down_factor;
-            
-        min_f = policy->cpuinfo.min_freq;
-        max_f = policy->cpuinfo.max_freq;
-        freq_next = min_f + (load * (max_f - min_f) / 85);
-        
-        if (freq_next > max_f) 
-            freq_next = max_f;
-        
-        dbs_freq_increase(policy, freq_next);
-        
-    } else {
-        /* Columbina Smart Hysteresis Hold - Sustained Performance */
-        if (per_cpu(columbina_hold_count, policy->cpu) < 8) { 
-            per_cpu(columbina_hold_count, policy->cpu)++;
-            return; 
-        }
-
-        /* FILTER HYSTERESIS */
-        if (load + moon_tuners->down_differential > up_threshold)
+        dbs_freq_increase(policy, policy->max);
+	} else {
+		/*FILTER HYSTERESIS*/
+		if (load + moon_tuners->down_differential > up_threshold)
             return;
 
-        min_f = policy->cpuinfo.min_freq;
-        max_f = policy->cpuinfo.max_freq;
-        freq_next = min_f + load * (max_f - min_f) / 100;
+		min_f = policy->cpuinfo.min_freq;
+		max_f = policy->cpuinfo.max_freq;
+		freq_next = min_f + load * (max_f - min_f) / 100;
 
-        /* Columbina Smooth Step Down Execution */
-        if (policy->cur > freq_next) {
-            unsigned int max_drop = 250000;
-            if ((policy->cur - freq_next) > max_drop) {
-                freq_next = policy->cur - max_drop;
-            }
-        }
+		/* No longer fully busy, reset rate_mult */
+		policy_dbs->rate_mult = 1;
 
-        policy_dbs->rate_mult = 1;
+		if (moon_tuners->powersave_bias)
+			freq_next = moon_ops.powersave_bias_target(policy,
+								 freq_next,
+								 CPUFREQ_RELATION_L);
 
-        if (moon_tuners->powersave_bias)
-            freq_next = moon_ops.powersave_bias_target(policy,
-                                 freq_next,
-                                 CPUFREQ_RELATION_L);
-
-        __cpufreq_driver_target(policy, freq_next, CPUFREQ_RELATION_C);
-    }
+		__cpufreq_driver_target(policy, freq_next, CPUFREQ_RELATION_C);
+	}
 }
 
 static unsigned int moon_dbs_update(struct cpufreq_policy *policy)
