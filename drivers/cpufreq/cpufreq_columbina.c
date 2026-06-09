@@ -175,8 +175,11 @@ so that the transition doesn't shock the hardware too much */
 
 
     /* --- THE STABILIZER (Weighted Average) --- */
-    load = (load * 3 + prev_load) / 4;
-
+    if (load > prev_load + 35) {
+        load = load; 
+    } else {
+        load = (load * 3 + prev_load) / 4;
+    }
     if (abs(load - prev_load) < 3)
         load = prev_load;
 
