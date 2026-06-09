@@ -49,7 +49,7 @@ static struct work_struct input_boost_work;
 
 static bool input_boost_enabled;
 
-static unsigned int input_boost_ms = 120;
+static unsigned int input_boost_ms = 300;
 show_one(input_boost_ms);
 store_one(input_boost_ms);
 cpu_boost_attr_rw(input_boost_ms);
@@ -69,14 +69,25 @@ static ssize_t store_input_boost_freq(struct kobject *kobj,
                       struct kobj_attribute *attr,
                       const char *buf, size_t count)
 {
-    int i;
-    for_each_possible_cpu(i) {
-        per_cpu(sync_info, i).input_boost_freq = 0;
-    }
+	int id, cnt;
+	unsigned int val;
+	const char *p = buf;
+	struct cpu_sync *s;
 
-    input_boost_enabled = false;
-    return count;
+	while (sscanf(p, "%d:%u%n", &id, &val, &cnt) == 2) {
+		if (id < 0 || id >= nr_cpu_ids)
+			goto skip;
+
+		s = &per_cpu(sync_info, id);
+		s->input_boost_freq = val;
+skip:
+		p += cnt;
+	}
+
+	input_boost_enabled = true;
+	return count;
 }
+
 
 static ssize_t show_input_boost_freq(struct kobject *kobj,
 				     struct kobj_attribute *attr, char *buf)
@@ -310,7 +321,7 @@ static int cpu_boost_init(void)
 		if (cpu <= 3)
 			s->input_boost_freq = 1190400; /* Little Cluster*/
 		else
-			s->input_boost_freq = 1344000; /* Big Cluster */
+			s->input_boost_freq = 1766400; /* Big Cluster */
 	}
 
 	input_boost_enabled = true;
