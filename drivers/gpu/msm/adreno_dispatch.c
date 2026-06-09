@@ -35,7 +35,7 @@ static unsigned int _fault_throttle_burst = 3;
  * Maximum ringbuffer inflight for the single submitting context case - this
  * should be sufficiently high to keep the GPU loaded
  */
-static unsigned int _dispatcher_q_inflight_hi = 256;
+static unsigned int _dispatcher_q_inflight_hi = 128;
 
 /*
  * Minimum inflight for the multiple context case - this should sufficiently low
