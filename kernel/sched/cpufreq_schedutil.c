@@ -17,6 +17,8 @@
 #include <trace/events/power.h>
 #include <linux/sched/sysctl.h>
 
+int sugov_boost_threshold = 250;
+
 struct sugov_tunables {
 	struct gov_attr_set	attr_set;
 	unsigned int		up_rate_limit_us;
@@ -226,6 +228,13 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 
 	freq = map_util_freq(util, freq, max);
 	trace_sugov_next_freq(policy->cpu, util, max, freq);
+
+   /* === INTERNATIONAL SPEED BOOST JUMPER === */
+	// Apply max frequency immediately if big cluster utilization exceeds the threshold
+	if (policy->cpu >= 4 && util > sugov_boost_threshold) {
+		freq = policy->cpuinfo.max_freq;
+	}
+	/* ========================================= */
 
 	if (freq == sg_policy->cached_raw_freq && !sg_policy->need_freq_update)
 		return sg_policy->next_freq;
@@ -610,9 +619,9 @@ static unsigned int sugov_next_freq_shared(struct sugov_cpu *sg_cpu, u64 time)
 		 * freq = max_freq * 1.25 * (util / max) for nonzero util,
 		 * leading to spurious jumps to fmax.
 		 */
-		j_util = j_sg_cpu->util;
+		
 		j_max = j_sg_cpu->max;
-		j_util = sugov_iowait_apply(j_sg_cpu, time, j_util, j_max);
+		j_util = j_util = j_sg_cpu->util;sugov_iowait_apply(j_sg_cpu, time, j_util, j_max);
 
 		if (j_util * max > j_max * util) {
 			util = j_util;
@@ -769,6 +778,22 @@ static struct kobj_type sugov_tunables_ktype = {
 	.sysfs_ops = &governor_sysfs_ops,
 	.release = &sugov_tunables_free,
 };
+
+static ssize_t boost_threshold_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", sugov_boost_threshold);
+}
+
+static ssize_t boost_threshold_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int input_val;
+	if (kstrtoint(buf, 10, &input_val))
+		return -EINVAL;	
+	sugov_boost_threshold = input_val;
+	return count;
+}
+
+static struct kobj_attribute boost_threshold_attr = __ATTR(speed_boost_threshold, 0644, boost_threshold_show, boost_threshold_store);
 
 /********************** cpufreq governor interface *********************/
 
@@ -940,8 +965,8 @@ static int sugov_init(struct cpufreq_policy *policy)
 	tunables->up_rate_limit_us = cpufreq_policy_transition_delay_us(policy);
 	tunables->down_rate_limit_us = cpufreq_policy_transition_delay_us(policy);
 	
-	tunables->up_rate_limit_us = 500;
-	tunables->down_rate_limit_us = 5000;
+	tunables->up_rate_limit_us = 0;
+    tunables->down_rate_limit_us = 50000;
 
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;
@@ -1105,6 +1130,10 @@ struct cpufreq_governor *cpufreq_default_governor(void)
 
 static int __init sugov_register(void)
 {
-	return cpufreq_register_governor(&schedutil_gov);
+	int ret = cpufreq_register_governor(&schedutil_gov);
+	if (!ret) {
+		ret = sysfs_create_file(kernel_kobj, &boost_threshold_attr.attr);
+	}
+	return ret;
 }
 fs_initcall(sugov_register);
