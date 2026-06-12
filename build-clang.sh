@@ -2,8 +2,8 @@
 # script BY: anomaly_arc
 SECONDS=0 
 DEFCONFIG="vendor/fog-perf_defconfig"
-export KBUILD_BUILD_USER="Filia-Lunae"
-export KBUILD_BUILD_HOST="Linux_Mint_22.3-Cinnamon_64-bit"
+export KBUILD_BUILD_USER="Filia"
+export KBUILD_BUILD_HOST="Quantum-world⚛"
 export ARCH=arm64
 export SUBARCH=arm64
 TC_DIR="$(pwd)/../android_prebuilts_clang-standalone"
