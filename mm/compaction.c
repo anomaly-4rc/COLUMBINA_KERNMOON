@@ -2387,19 +2387,18 @@ enum compact_result try_to_compact_pages(gfp_t gfp_mask, unsigned int order,
 			 */
 			defer_compaction(zone, order);
 
-		/*
-		 * We might have stopped compacting due to need_resched() in
-		 * async compaction, or due to a fatal signal detected. In that
-		 * case do not try further zones
+				/*
+		 * Neko Project Modification: Add micro-cushions.
+* Don't let direct compaction freeze important threads for too long.
 		 */
 		if ((prio == COMPACT_PRIO_ASYNC && need_resched())
-					|| fatal_signal_pending(current))
+					|| fatal_signal_pending(current)
+					|| (prio > COMPACT_PRIO_ASYNC && need_resched() && (current->prio < 120)))
 			break;
 	}
 
 	return rc;
 }
-
 
 /* Compact all zones within a node */
 static void compact_node(int nid)
