@@ -63,6 +63,7 @@
 
 #include "tree.h"
 #include "rcu.h"
+#include <linux/kprobes.h>
 
 #ifndef data_race
 #define data_race(expr)							\
