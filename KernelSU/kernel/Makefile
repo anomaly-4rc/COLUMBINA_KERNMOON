@@ -1,3 +1,4 @@
+ifdef CONFIG_KSU
 kernelsu-objs := ksu.o
 kernelsu-objs += allowlist.o
 kernelsu-objs += apk_sign.o
@@ -69,3 +70,4 @@ $(info -- You have not integrate susfs in your kernel.)
 $(info -- Read: https://gitlab.com/simonpunk/susfs4ksu)
 endif
 # Keep a new line here!! Because someone may append config
+endif
